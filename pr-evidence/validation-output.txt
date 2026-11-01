@@ -1,0 +1,19 @@
+CROSS_STATE4095 {"diff": 0, "max": 0.0}
+CROSS_OUTPUT4095 {"diff": 0, "max": 0.0}
+SHAPE {"n": 1, "state_differences": 0}
+SHAPE {"n": 6, "state_differences": 0}
+SHAPE {"n": 16, "state_differences": 0}
+SHAPE {"n": 17, "state_differences": 0}
+SHAPE {"n": 32, "state_differences": 0}
+SHAPE {"n": 64, "state_differences": 0}
+SHAPE {"n": 128, "state_differences": 0}
+SHAPE {"n": 129, "state_differences": 0}
+SHAPE {"n": 255, "state_differences": 0}
+SHAPE {"n": 256, "state_differences": 0}
+SHAPE {"n": 257, "state_differences": 0}
+SHAPE {"n": 511, "state_differences": 0}
+SHAPE {"n": 512, "state_differences": 0}
+SHAPE {"n": 513, "state_differences": 0}
+GRAPH_CHANGED_INPUT_PASS
+FP64_REFERENCE {"diff": 0, "max": 0.0}
+VARIANTS_PASS: 24 BF16/FP16 cases; ratios 4/128; heads 128/512

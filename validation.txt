@@ -1,0 +1,19 @@
+Argmax softmax probability: masked leading tiles
+Ascend 910C | FP32 / BF16 / FP16
+Selected results rendered from saved NPU test logs
+
+Before
+  masked_first_tile: prob=nan, expected=6.103515625e-05
+  only_last_token_allowed: prob=nan, expected=1.0
+
+After
+  masked_first_tile: prob=6.103515625e-05, expected=6.103515625e-05
+  only_last_token_allowed: prob=1.0, expected=1.0
+
+Regression results
+  Boundary cases: 15 passed (FP32 / BF16 / FP16)
+  Mixed-row and strided inputs: EXTENDED_PASS 15
+  Existing tests: 12 passed, 14 warnings in 28.99s
+  REGRESSION_COMPLETE
+
+Warnings: torch.jit.script_method deprecation.

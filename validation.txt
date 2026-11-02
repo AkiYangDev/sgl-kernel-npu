@@ -1,0 +1,30 @@
+Lightning Indexer tiling cache - Ascend 910C
+Selected NPU logs, rendered for readability
+Base: 184fbaa | Fix: 19c3a3d
+
+BEFORE: fresh processes pass; switching modes fails
+order=0    mode=0 match=True query0_tail=[4093, 4094, 4095]
+order=3    mode=3 match=True query0_tail=[]
+order=3,0  mode=3 match=True query0_tail=[]
+order=3,0  mode=0 match=False query0_tail=[]
+order=0,3  mode=0 match=True query0_tail=[4093, 4094, 4095]
+order=0,3  mode=3 match=False query0_tail=[4093, 4094, 4095]
+
+AFTER: full index comparison, four queries per call
+torch.float16  count=2048 mode=3 match=True mismatches=0
+torch.float16  count=2048 mode=0 match=True mismatches=0
+torch.float16  count=1024 mode=0 match=True mismatches=0
+torch.float16  count=1024 mode=3 match=True mismatches=0
+torch.float16  count=2048 mode=3 match=True mismatches=0
+torch.float16  count=512  mode=3 match=True mismatches=0
+torch.float16  count=2048 mode=0 match=True mismatches=0
+torch.bfloat16 count=2048 mode=3 match=True mismatches=0
+torch.bfloat16 count=2048 mode=0 match=True mismatches=0
+torch.bfloat16 count=1024 mode=0 match=True mismatches=0
+torch.bfloat16 count=1024 mode=3 match=True mismatches=0
+torch.bfloat16 count=2048 mode=3 match=True mismatches=0
+torch.bfloat16 count=512  mode=3 match=True mismatches=0
+torch.bfloat16 count=2048 mode=0 match=True mismatches=0
+REGRESSION_COMPLETE
+
+FP16 / BF16 | TopK 512, 1024, 2048 | modes 0 and 3

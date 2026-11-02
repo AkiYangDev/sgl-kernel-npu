@@ -1,0 +1,112 @@
+[
+  {
+    "batch": 1,
+    "samples_each": 10,
+    "launches_per_graph": 100,
+    "shape": "H16 HV32 K128 V128",
+    "gates": "per-head linspace(-8,8)",
+    "original": {
+      "median_us": 8.642300069332123,
+      "min_us": 8.458799719810486,
+      "max_us": 8.767799735069275
+    },
+    "final": {
+      "median_us": 9.078100025653839,
+      "min_us": 8.933600187301636,
+      "max_us": 9.158599972724915
+    },
+    "release": {
+      "median_us": 9.105499982833862,
+      "min_us": 9.040799736976624,
+      "max_us": 9.201599955558777
+    }
+  },
+  {
+    "batch": 8,
+    "samples_each": 10,
+    "launches_per_graph": 100,
+    "shape": "H16 HV32 K128 V128",
+    "gates": "per-head linspace(-8,8)",
+    "original": {
+      "median_us": 30.943700075149536,
+      "min_us": 30.76200008392334,
+      "max_us": 31.0752010345459
+    },
+    "final": {
+      "median_us": 32.870999574661255,
+      "min_us": 32.66319990158081,
+      "max_us": 32.99639940261841
+    },
+    "release": {
+      "median_us": 31.34999990463257,
+      "min_us": 31.17759943008423,
+      "max_us": 31.39699935913086
+    }
+  },
+  {
+    "batch": 16,
+    "samples_each": 10,
+    "launches_per_graph": 100,
+    "shape": "H16 HV32 K128 V128",
+    "gates": "per-head linspace(-8,8)",
+    "original": {
+      "median_us": 53.14320087432861,
+      "min_us": 53.09500217437744,
+      "max_us": 53.31079959869385
+    },
+    "final": {
+      "median_us": 57.472801208496094,
+      "min_us": 57.35459804534912,
+      "max_us": 57.607998847961426
+    },
+    "release": {
+      "median_us": 50.34840106964111,
+      "min_us": 50.218801498413086,
+      "max_us": 50.44939994812012
+    }
+  },
+  {
+    "batch": 32,
+    "samples_each": 10,
+    "launches_per_graph": 100,
+    "shape": "H16 HV32 K128 V128",
+    "gates": "per-head linspace(-8,8)",
+    "original": {
+      "median_us": 100.56999683380127,
+      "min_us": 100.53139686584473,
+      "max_us": 100.74379920959473
+    },
+    "final": {
+      "median_us": 109.03219699859619,
+      "min_us": 108.9780044555664,
+      "max_us": 109.10940170288086
+    },
+    "release": {
+      "median_us": 90.24030208587646,
+      "min_us": 90.12860298156738,
+      "max_us": 90.26060104370117
+    }
+  },
+  {
+    "batch": 64,
+    "samples_each": 10,
+    "launches_per_graph": 100,
+    "shape": "H16 HV32 K128 V128",
+    "gates": "per-head linspace(-8,8)",
+    "original": {
+      "median_us": 255.0390911102295,
+      "min_us": 254.81939315795898,
+      "max_us": 255.39199829101562
+    },
+    "final": {
+      "median_us": 263.0593013763428,
+      "min_us": 262.9043960571289,
+      "max_us": 263.4149932861328
+    },
+    "release": {
+      "median_us": 249.36729431152344,
+      "min_us": 249.2136001586914,
+      "max_us": 249.5330047607422
+    }
+  }
+]

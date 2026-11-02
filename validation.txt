@@ -1,0 +1,27 @@
+Decode TopK: exclude padded lanes from the minimum
+Ascend 910C | selected actual test results, rendered for readability
+Base: 969dfb3 | Fix: d2d0c87 | 2026-11-02
+
+BEFORE: 131072 tokens, 1024 blocks, BF16, topk=24
+actual:   [1015, 1014, 1013, ... , 994, 993, 992]
+expected: [1023, 1022, 1021, ... , 1002, 1001, 1000]
+Highest 8 blocks omitted per head.
+
+AFTER: final production sources; exact indices checked on both heads
+CASE_PASS legacy BF16 topk=24: [1023, 1022, ... , 1000]
+CASE_PASS current BF16 topk=24: [1023, 1022, ... , 1000]
+
+32 base cases: legacy/current x FP16/BF16 x max/lse x topk 3/4/5/8
+8 cases: larger bound, runtime/fused, direct/fused, packed/adaptive/fused
+2 long-context cases; 4 full-attention smoke cases
+
+OPERATOR_CASES_PASS 46
+GRAPH_PASS legacy 2048 1
+GRAPH_PASS legacy 1536 1
+GRAPH_PASS legacy 2048 -1
+GRAPH_PASS current 2048 1
+GRAPH_PASS current 1536 1
+GRAPH_PASS current 2048 -1
+GRAPH_REPLAYS_PASS 6
+TOPK_FIXED_VALIDATION_COMPLETE
+EXIT_CODE 0

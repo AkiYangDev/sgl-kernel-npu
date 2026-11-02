@@ -1,0 +1,28 @@
+Legacy add RMSNorm: dtype-safe compiled-kernel caching
+Ascend 910C | selected actual test results, rendered for readability
+Torch 2.10.0 | torch_npu 2.10.0.post6 | 2026-11-02
+Base: 969dfb3 | Fix: 00ff355
+
+BEFORE: batch=2, hidden=2048, ones input/residual/weight, zero bias
+BF16 warmup -> FP16 inputs: residual=1.125, expected=2 (4096/4096 wrong)
+BF16 warmup -> FP16 weight only: output=0.0078125, expected=1 (4096/4096 wrong)
+
+AFTER: identical original regressions, final production source
+REGRESSION_PASS activation_dtype: output=1, residual=2, cache_entries=2
+REGRESSION_PASS weight_dtype: output=1, residual=2, cache_entries=2
+
+30 matrix calls: six pointer dtype transitions, A -> B -> A cache reuse
+BF16/FP16; FP32 weight/scale; hidden 2048/6144; int8/non-quantized output
+Matrix: CPU FP64 formula; exact residual/int8 outputs; inputs preserved
+
+OPERATOR_CASES_PASS 30
+GRAPH_PASS torch.bfloat16 1
+GRAPH_PASS torch.bfloat16 2
+GRAPH_PASS torch.bfloat16 4
+GRAPH_PASS torch.float16 1
+GRAPH_PASS torch.float16 2
+GRAPH_PASS torch.float16 4
+GRAPH_REPLAYS_PASS 6
+ORIGINAL_REGRESSION_CALLS_PASS 4
+TOTAL_OPERATOR_CALLS_PASS 34
+NORMAL_EXIT_CODE 0 (both final processes)

@@ -1,0 +1,25 @@
+Weightless RMSNorm: FP16 range regression
+Ascend 910C | selected actual test logs, rendered for readability
+Base: 184fbaa | Fix: 3d0fdd0
+
+BEFORE: both legacy and operator-backend entries, shape [1,2,128]
+x=256, eps=1e-06: actual=0, expected=1, bad=256/256
+x=0.0001, eps=1e-08: actual=1, expected=0.707031, bad=256/256
+
+AFTER: final code, both entries
+Shapes: [1,2,128], [1,65,2048], [2,1,4096], [1,1,8192]
+Cases: zero, 1, 255, 256, 1e-4, random, mixed magnitudes/signs
+DTYPE_PASS torch.float16
+DTYPE_PASS torch.bfloat16
+DTYPE_PASS torch.float32
+GRAPH_PASS rms_legacy_fixed torch.float16
+GRAPH_PASS rms_legacy_fixed torch.bfloat16
+GRAPH_PASS rms_legacy_fixed torch.float32
+GRAPH_PASS rms_current_fixed torch.float16
+GRAPH_PASS rms_current_fixed torch.bfloat16
+GRAPH_PASS rms_current_fixed torch.float32
+GRAPH_REPLAYS_PASS 18
+UPSTREAM_LEGACY_PASS
+RMS_FIXED_VALIDATION_COMPLETE
+RANGE_CASES_PASS 168
+EXIT_CODE 0

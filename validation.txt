@@ -1,0 +1,39 @@
+batch_matmul_transpose: preserve tiling across graph replays
+Ascend 910C | selected actual NPU logs, rendered for readability
+Base: 184fbaa | Fix: 1db81a7
+
+BEFORE: a same-token-count call with N=64 corrupts the N=128 graph
+FP16 graph128_before          match=True  mismatches=0
+FP16 graph128_after64         match=False mismatches=4096
+FP16 graph128_after_restore   match=True  mismatches=0
+BF16 graph128_before          match=True  mismatches=0
+BF16 graph128_after64         match=False mismatches=4096
+BF16 graph128_after_restore   match=True  mismatches=0
+
+AFTER: changed-input replay with mixed shapes, dtypes and layouts
+eager                       FP16_8_4_128_128_ND       mismatches=0
+eager                       FP16_8_4_128_64_ND        mismatches=0
+eager                       BF16_8_2_256_128_ND       mismatches=0
+eager                       BF16_8_4_128_128_ND       mismatches=0
+eager                       FP16_8_4_128_128_NZ       mismatches=0
+interleaved_replay_0        FP16_8_4_128_128_ND       mismatches=0
+interleaved_replay_0        FP16_8_4_128_64_ND        mismatches=0
+interleaved_replay_0        BF16_8_2_256_128_ND       mismatches=0
+interleaved_replay_0        BF16_8_4_128_128_ND       mismatches=0
+interleaved_replay_0        FP16_8_4_128_128_NZ       mismatches=0
+interleaved_replay_1        FP16_8_4_128_128_ND       mismatches=0
+interleaved_replay_1        FP16_8_4_128_64_ND        mismatches=0
+interleaved_replay_1        BF16_8_2_256_128_ND       mismatches=0
+interleaved_replay_1        BF16_8_4_128_128_ND       mismatches=0
+interleaved_replay_1        FP16_8_4_128_128_NZ       mismatches=0
+interleaved_replay_2        FP16_8_4_128_128_ND       mismatches=0
+interleaved_replay_2        FP16_8_4_128_64_ND        mismatches=0
+interleaved_replay_2        BF16_8_2_256_128_ND       mismatches=0
+interleaved_replay_2        BF16_8_4_128_128_ND       mismatches=0
+interleaved_replay_2        FP16_8_4_128_128_NZ       mismatches=0
+first_use_capture           FP16_11_2_128_64_ND       mismatches=0
+after_graph_destroyed       FP16_11_2_128_64_ND       mismatches=0
+recapture_retained_config   FP16_11_2_128_64_ND       mismatches=0
+M_LIMIT_PRESERVED
+FIXED_BMM_COMPLETE checks=23
+Process completed without a shutdown error.

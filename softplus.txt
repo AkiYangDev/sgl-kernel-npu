@@ -1,0 +1,24 @@
+GDN gating: preserve negative-tail Softplus values
+Ascend 910C | selected actual NPU logs, rendered for readability
+Base: 184fbaa | Fix: a0164af
+
+BEFORE: beta=1, dt_bias=0, A_log=10
+torch.float32: x=-18 actual=-0 reference=-0.0003354626
+torch.bfloat16: x=-18 actual=-0 reference=-0.0003354626
+torch.float16: x=-18 actual=-0 reference=-0.0003354626
+
+AFTER: original failure, both entry points
+fused_gdn_gating_npu
+  x=-18 actual=-0.0003354625951 reference=-0.0003354625951
+fused_gdn_gating_kernel_without_sigmoid
+  x=-18 actual=-0.0003354625951 reference=-0.0003354625951
+
+SOFTPLUS_DTYPE_PASS torch.float32
+SOFTPLUS_DTYPE_PASS torch.bfloat16
+SOFTPLUS_DTYPE_PASS torch.float16
+SOFTPLUS_CASES_PASS 26 max_relative_error 1.3376845231505285e-07
+beta / threshold: (0.5,15), (1,20), (2,5), (4,-1)
+NaN and +/-infinity included
+GRAPH_PASS softplus (2 entry points x 3 changed-input replays)
+UPSTREAM_4_PASS softplus
+GDN_FIXED_VALIDATION_COMPLETE

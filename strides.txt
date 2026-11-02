@@ -1,0 +1,19 @@
+GDN gating: normalize strided inputs
+Ascend 910C | selected actual NPU logs, rendered for readability
+Base: 184fbaa | Fix: 93d8a8d
+
+BEFORE: fused_gdn_gating_npu, shape [3, 16]
+strided: g_bad=32, beta_bad=32
+contiguous_control: g_bad=0, beta_bad=0
+
+AFTER: both public entry points
+STRIDE_DTYPE_PASS torch.float32
+STRIDE_DTYPE_PASS torch.bfloat16
+STRIDE_DTYPE_PASS torch.float16
+STRIDE_CASES_PASS 120
+Layouts: contiguous, row gaps, column gaps, transpose, broadcast
+Shapes: [1,7], [3,16], [65,24], [257,64]
+Strided vectors and nonzero storage offsets included
+GRAPH_PASS stride (2 entry points x 3 changed-input replays)
+UPSTREAM_4_PASS stride
+GDN_FIXED_VALIDATION_COMPLETE

@@ -1,0 +1,19 @@
+Cache-location windows: NPU validation
+Ascend 910C | int32 / int64 request indices
+Selected results rendered from saved test logs
+
+Before: four requests, same window length per request
+  window=16:  0 /  64 incorrect slots (both index dtypes)
+  window=17:  4 /  68 incorrect slots (both index dtypes)
+  window=24: 32 /  96 incorrect slots (both index dtypes)
+  window=32: 64 / 128 incorrect slots (both index dtypes)
+
+After: tiled reads and writes, exact tail lengths
+EAGER_PASS 216
+GRAPH_PASS update torch.int32 3 changed-input replays
+GRAPH_PASS assign torch.int32 3 changed-input replays
+GRAPH_PASS update torch.int64 3 changed-input replays
+GRAPH_PASS assign torch.int64 3 changed-input replays
+FIX_VALIDATION_COMPLETE
+
+Existing cache boundary suite: 18 cases passed (both operations)

@@ -1,0 +1,2 @@
+# Preserve pinned upstream DSL source bytes and provenance hashes on Windows.
+python/sgl_kernel_npu/sgl_kernel_npu/implementation/cannbotdsl/attention/*.py text eol=lf

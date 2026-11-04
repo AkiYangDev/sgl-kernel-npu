@@ -2,6 +2,13 @@
 
 | 接口名称 | 支持的后端 |
 | --- | --- |
+| [quant_sparse_lightning_indexer_metadata](operators/indexer/quant_sparse_lightning_indexer_metadata.md) | `cannbotdsl` (A5) |
+| [quant_sparse_lightning_indexer](operators/indexer/quant_sparse_lightning_indexer.md) | `cannbotdsl` (A5) |
+| [quant_lightning_indexer_metadata](operators/indexer/quant_lightning_indexer_metadata.md) | `cannbotdsl` (A5) |
+| [quant_lightning_indexer](operators/indexer/quant_lightning_indexer.md) | `cannbotdsl` (A5) |
+| [mixed_quant_sparse_flash_mla_metadata](operators/attention/mixed_quant_sparse_flash_mla_metadata.md) | `cannbotdsl` (A5) |
+| [mixed_quant_sparse_flash_mla](operators/attention/mixed_quant_sparse_flash_mla.md) | `cannbotdsl` (A5) |
+| [indexer_prologue_k](operators/indexer/indexer_prologue_k.md) | `cannbotdsl` (A5) |
 | [flash_mla](operators/attention/flash_mla.md) | `cann_ops_transformers_cann920`、`torch_native` |
 | [flash_mla_metadata](operators/attention/flash_mla_metadata.md) | `cann_ops_transformers_cann920` |
 | [quant_flash_attn](operators/attention/quant_flash_attn.md) | `cann_ops_transformer`、`torch_native` |

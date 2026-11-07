@@ -85,7 +85,7 @@ setuptools.setup(
     url="https://github.com/sgl-project/sgl-kernel-npu/",
     license="BSD 3 License",
     python_requires=">=3.7",
-    extras_require={"cannbot_dsl": ["cannbot-dsl>=0.8.0", "packaging"]},
+    extras_require={"cannbot_dsl": ["cannbot-dsl>=0.7.1,<0.8", "packaging"]},
     package_data={
         "sgl_kernel_npu": ["lib/**", "VERSION"],
         "sgl_kernel_npu.implementation.cannbot-dsl": [

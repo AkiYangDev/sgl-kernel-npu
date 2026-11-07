@@ -1,54 +1,61 @@
 {
   "repository": "https://gitcode.com/cann/cannbot-dsl.git",
-  "commit": "71ee7fdffa34c3e8a153fa55a0c970bb2d3a3231",
+  "commit": "0cca3f5313ff7c09e3bcd1453e82388b2f612872",
   "license": "CANN Open Software License Agreement Version 2.0",
-  "dsl_version": "0.8.0",
+  "dsl_version": "0.7.1",
   "target_cann_version": "9.2.0",
   "target_arch": "3510",
   "device_validation": "NOT_RUN",
   "files": [
     {
-      "path": "samples/attention/indexer_prologue_k/indexer_prologue_k.py",
+      "path": "samples/indexer_prologue_k/indexer_prologue_k.py",
       "file": "indexer_prologue_k.py",
-      "sha256": "2516abac336155cd15e3d8b72547f04fec1fede785155f12becd1db0f0344f9a",
-      "upstream_sha256": "132b87236afd8efcea3b0263a2a68e391e100a53ff32d2eddd255b99374a38b5"
+      "sha256": "948310b98cf1705fcae766b7895e81a97576755cc957cb3b4321e1d184991812",
+      "upstream_sha256": "d75199d21f66e93068d3b80299bba43be194b79c7ae586aedab3afc71cacf329"
     },
     {
-      "path": "samples/attention/mixed_quant_sparse_flash_mla/mixed_quant_sparse_flash_mla.py",
+      "path": "samples/mixed_quant_sparse_flash_mla/mixed_quant_sparse_flash_mla.py",
       "file": "mixed_quant_sparse_flash_mla.py",
-      "sha256": "75a84000763785e5db4211204357f33a46e2b19206a7dc72fdae9c6008cab43c"
+      "sha256": "40b5b14ced15bb7c3d3687ab7387d508a19065eb5353dfb0675348e0de22fa3f",
+      "upstream_sha256": "40b5b14ced15bb7c3d3687ab7387d508a19065eb5353dfb0675348e0de22fa3f"
     },
     {
-      "path": "samples/attention/mixed_quant_sparse_flash_mla/mixed_quant_sparse_flash_mla_metadata.py",
+      "path": "samples/mixed_quant_sparse_flash_mla_metadata/mixed_quant_sparse_flash_mla_metadata.py",
       "file": "mixed_quant_sparse_flash_mla_metadata.py",
-      "sha256": "51e13bd02d35704f99298dd9fdff36ddd82c941a8106c07d8e668d29664ad40a"
+      "sha256": "a62295be0fdf6acc7c0c606e60424e3fbc03310bee4e1effa2a384ccd6415b65",
+      "upstream_sha256": "a62295be0fdf6acc7c0c606e60424e3fbc03310bee4e1effa2a384ccd6415b65"
     },
     {
-      "path": "samples/attention/quant_lightning_indexer/quant_lightning_indexer.py",
+      "path": "samples/quant_lightning_indexer_dsl/quant_lightning_indexer_dsl.py",
       "file": "quant_lightning_indexer.py",
-      "sha256": "e2dd446eabc64b051f2568aaf114eb91dc93bb807a5a60efd2b0df9a7faaecae"
+      "sha256": "e5152d247b0ddd26a186b42a0a40d3ecc5a6f026d9fd2b0f43a96e41df1e00e6",
+      "upstream_sha256": "e5152d247b0ddd26a186b42a0a40d3ecc5a6f026d9fd2b0f43a96e41df1e00e6"
     },
     {
-      "path": "samples/attention/quant_lightning_indexer_metadata/quant_lightning_indexer_metadata.py",
+      "path": "samples/quant_lightning_indexer_metadata_dsl/quant_lightning_indexer_metadata_dsl.py",
       "file": "quant_lightning_indexer_metadata.py",
-      "sha256": "d78f6062c2c8897161cf946706f46a7a519db19047d4c53a9e8b05b62a9b0ed0"
+      "sha256": "f432d48d24a2a0adf600bd6baf6b014ecb4fe319d52531128e6ff6d8e0ea8f38",
+      "upstream_sha256": "f432d48d24a2a0adf600bd6baf6b014ecb4fe319d52531128e6ff6d8e0ea8f38"
     },
     {
-      "path": "samples/attention/quant_sparse_lightning_indexer/quant_sparse_lightning_indexer.py",
+      "path": "samples/quant_sparse_lightning_indexer_dsl/quant_sparse_lightning_indexer_dsl.py",
       "file": "quant_sparse_lightning_indexer.py",
-      "sha256": "b4795059c3c016180431928e3ae0a9ae2cacbd7346145dc6fc26abc62ac13568"
+      "sha256": "5095bc225abe585f9dcfef4eb86b5d50e1f3005caa585c67d114623f7d61923f",
+      "upstream_sha256": "5095bc225abe585f9dcfef4eb86b5d50e1f3005caa585c67d114623f7d61923f"
     },
     {
-      "path": "samples/attention/quant_sparse_lightning_indexer_metadata/quant_sparse_lightning_indexer_metadata.py",
+      "path": "samples/quant_sparse_lightning_indexer_metadata_dsl/quant_sparse_lightning_indexer_metadata_dsl.py",
       "file": "quant_sparse_lightning_indexer_metadata.py",
-      "sha256": "c75be92de66a0307500bb5da12f622ad35df87f2dd9bee15a09bbc4d3a19a0a4"
+      "sha256": "e88f8d417ce98daf523399e1e1216a30bfd17d8f60a1724c058c6abf911fa2d8",
+      "upstream_sha256": "e88f8d417ce98daf523399e1e1216a30bfd17d8f60a1724c058c6abf911fa2d8"
     }
   ],
+  "runtime_requirement": ">=0.7.1,<0.8",
   "patches": [
     {
       "file": "indexer_prologue_k.py",
       "upstream_commit": "31bbd706a4e6a72b278da4b70718e60286ccb9e7",
-      "description": "Pad projection backing to BASE_M rows while preserving logical T."
+      "description": "Pad projection backing to BASE_M rows while passing the logical T-row view."
     }
   ]
 }

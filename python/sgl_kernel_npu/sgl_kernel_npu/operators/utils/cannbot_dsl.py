@@ -6,7 +6,8 @@ from contextlib import contextmanager
 from functools import lru_cache
 from itertools import chain
 
-MIN_DSL_VERSION = "0.8.0"
+MIN_DSL_VERSION = "0.7.1"
+MAX_DSL_VERSION = "0.8"
 _NO_DEVICE = object()
 
 
@@ -70,21 +71,26 @@ def ascend950_device(*args, **kwargs):
 
 @lru_cache(maxsize=1)
 def initialize_backend():
-    """Check the upstream runtime minimum, independently of the CI version pin."""
+    """Check the 0.7 API family used by this independent source variant."""
     from packaging.version import InvalidVersion, Version
 
     try:
         version = importlib.metadata.version("cannbot-dsl")
     except importlib.metadata.PackageNotFoundError as error:
         raise RuntimeError(
-            "Install cannbot-dsl>=0.8.0 in the matching Linux/Python environment"
+            "Install cannbot-dsl>=0.7.1,<0.8 in the matching Linux/Python environment"
         ) from error
     try:
         installed = Version(version)
     except InvalidVersion as error:
         raise RuntimeError(f"Invalid cannbot-dsl version: {version!r}") from error
-    if installed < Version(MIN_DSL_VERSION):
-        raise RuntimeError(f"Expected cannbot-dsl>={MIN_DSL_VERSION}; found {version}")
+    if (
+        not Version(MIN_DSL_VERSION) <= installed < Version(MAX_DSL_VERSION)
+        or installed.is_prerelease
+    ):
+        raise RuntimeError(
+            f"Expected cannbot-dsl>={MIN_DSL_VERSION},<{MAX_DSL_VERSION}; found {version}"
+        )
 
 
 @lru_cache(maxsize=None)

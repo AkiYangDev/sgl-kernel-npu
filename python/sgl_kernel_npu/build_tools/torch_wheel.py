@@ -285,7 +285,7 @@ def setup_refactor():
             "torch==" + torch.__version__.split("+")[0],
             "torch_npu==" + torch_npu.__version__.split("+")[0],
         ],
-        extras_require={"cannbot_dsl": ["cannbot-dsl>=0.8.0", "packaging"]},
+        extras_require={"cannbot_dsl": ["cannbot-dsl>=0.7.1,<0.8", "packaging"]},
         url="https://github.com/sgl-project/sgl-kernel-npu/",
         license="BSD 3 License",
     )

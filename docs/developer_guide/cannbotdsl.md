@@ -6,12 +6,27 @@ records the source commit, original paths and hashes; the CANN license is
 packaged beside it. `auto` and `cannbot_dsl` select the same implementation.
 
 The selected validation target is **A5 / ARCH 3510, CANN 9.2.0 and
-cannbot-dsl 0.8.0**. Upstream documents CANN 9.2.1; the selected combination
-still needs device compilation, numerical and graph-replay validation.
+cannbot-dsl 0.7.1**. Device numerical and graph-replay validation is still
+required before using this alternative in a deployment.
 
-The runtime and wheel extra require `cannbot-dsl>=0.8.0`, matching upstream.
-The exact 0.8.0 installation below pins the validation environment; it is not
-a runtime upper bound. Newer versions still require device validation.
+This independent variant pins the seven samples at upstream commit
+`0cca3f5313ff7c09e3bcd1453e82388b2f612872`, before their transition to the
+0.8 on-chip buffer API. It uses `Channel`, `GmIn` and `GmOut` directly and
+does not emulate `RingBuffer` with a global compatibility shim. The runtime
+and optional wheel extra select `cannbot-dsl>=0.7.1,<0.8`; this interval is
+the branch's compatibility policy, not an upstream promise about all future
+0.7 releases. The validated compiler version must be recorded separately.
+
+The seven public signatures are unchanged, so the existing SGLang resolver
+can be reused. The earlier sample snapshot also predates later algorithm and
+performance changes; numerical and performance equivalence with the 0.8
+variant is not established.
+
+The K prologue includes upstream fix `31bbd706a4e6a72b278da4b70718e60286ccb9e7`:
+round its projection allocation up to 16 rows and pass only the logical T-row
+view to the pipeline. A fixpipe tail tile can otherwise write beyond a
+`[T,D]` allocation, including the common decode case T=1. This is a concrete
+memory-safety fix, not proof that it resolves the model's observed NaNs.
 
 ## Build and use
 
@@ -20,7 +35,7 @@ Build the ordinary kernel wheel using the repository-root build command:
 ```bash
 python3 setup.py --arch-version 3510 --without-third-party -j8
 python3 -m pip install --force-reinstall --no-deps output/sgl_kernel_npu-*.whl
-python3 -m pip install 'cannbot-dsl==0.8.0'
+python3 -m pip install 'cannbot-dsl==0.7.1'
 ```
 
 `--without-third-party` isolates the migrated sources. Select the required
@@ -48,6 +63,9 @@ python3 -m pytest tests/python/sgl_kernel_npu/dsv41_cannbot_dsl --npu-device 0 -
 
 The suites retain independent numerical references. `test_metadata_graph.py`
 checks all three metadata operators after lengths change between replays.
+The K projection-tail guard covers T=1 and T=17 and checks that the full
+fixpipe write stays inside the actual allocation, not just that cache values
+match a reference.
 Record the installed versions, package hashes and executed test results;
 skipped cases do not establish device correctness.
 Full compute graph capture, model/PD integration and performance require

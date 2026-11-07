@@ -18,12 +18,12 @@ def helper(monkeypatch):
     spec = importlib.util.spec_from_file_location("_test_cannbot_helper", HELPER)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    monkeypatch.setattr(module.importlib.metadata, "version", lambda _: "0.8.0")
+    monkeypatch.setattr(module.importlib.metadata, "version", lambda _: "0.7.1")
     return module
 
 
 @pytest.mark.parametrize(
-    "version", [None, "0.7.0", "0.7.10", "0.8.0.dev1", "0.8.0rc1", "invalid"]
+    "version", [None, "0.7.0", "0.7.1rc1", "0.8.0.dev1", "0.8.0", "0.9.0", "invalid"]
 )
 def test_old_missing_or_invalid_dsl_is_rejected_before_import(
     helper, monkeypatch, version
@@ -43,9 +43,11 @@ def test_old_missing_or_invalid_dsl_is_rejected_before_import(
 
 @pytest.mark.parametrize(
     "version",
-    ["0.8", "0.8.0", "0.8.0+vendor.1", "0.8.0.post1", "0.8.1", "0.9.0", "0.10.0"],
+    ["0.7.1", "0.7.1+vendor.1", "0.7.1.post1", "0.7.2", "0.7.10"],
 )
-def test_runtime_minimum_allows_newer_versions(helper, monkeypatch, version):
+def test_runtime_allows_stable_versions_in_the_07_api_family(
+    helper, monkeypatch, version
+):
     monkeypatch.setattr(helper.importlib.metadata, "version", lambda _: version)
     operator = object()
     monkeypatch.setattr(

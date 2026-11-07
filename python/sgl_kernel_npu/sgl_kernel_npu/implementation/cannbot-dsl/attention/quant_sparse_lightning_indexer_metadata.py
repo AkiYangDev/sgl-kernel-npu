@@ -20,8 +20,8 @@ from functools import lru_cache
 import tempfile
 import torch
 from cannbotdsl.aicpu import (
-    gm_in as GmIn,
-    gm_out as GmOut,
+    GmIn,
+    GmOut,
     I32,
     I64,
     U32,
@@ -80,6 +80,8 @@ def metadata_kernel(args: Args):
     if args.sparse != 0:
         groups = total_q
     workers = args.workers
+    if args.sparse != 0:
+        workers = 32
     # 调度开销按有效 M 轴长度计算，尾组只计入实际 query 行。
     for i in range(METADATA_ELEMENTS):
         args.output[i] = 0
@@ -164,10 +166,10 @@ def metadata_kernel(args: Args):
         ] = qoff
     # ASC AssignByBatch -> AssignByRow -> AssignByBlock -> ForceAssign.
     # The cursor is a lexicographic (B, M, S2) boundary. No per-query split cap.
-    first_group = zeros(I64, workers)
-    last_group = zeros(I64, workers)
-    first_tile = zeros(I64, workers)
-    last_tile = zeros(I64, workers)
+    first_group = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    last_group = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    first_tile = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    last_tile = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
     max_row_cost = 0
     for g in range(groups):
         n = args.scratch[g]
@@ -286,10 +288,10 @@ def metadata_kernel(args: Args):
         else:
             args.output[c * 8 + 4] = args.batch
     # Record only cross-core rows. Compact workspace slots follow ASC FD order.
-    fd_group = zeros(I64, workers)
-    fd_parts = zeros(I64, workers)
-    fd_base = zeros(I64, workers)
-    fd_rows = zeros(I64, workers)
+    fd_group = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    fd_parts = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    fd_base = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    fd_rows = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
     fd_num = 0
     workspace = 0
     total_fd_load = 0
@@ -412,11 +414,7 @@ def build_metadata(
     output_idx_offset=None,
 ):
     groups = q.shape[0] if sparse else batch * max_tasks
-    workers = int(torch.npu.get_device_properties(q.device).cube_core_num)
-    if not 1 <= workers <= LD_RECORD_START:
-        raise RuntimeError(
-            f"Unsupported Cube core count {workers}; LI metadata supports 1..{LD_RECORD_START}"
-        )
+    workers = 32
     output = torch.empty((METADATA_ELEMENTS,), dtype=torch.int32, device=q.device)
     scratch = torch.empty(
         (groups * (12 + 3 * splits),), dtype=torch.int64, device=q.device

@@ -22,8 +22,8 @@ from functools import lru_cache
 import tempfile
 import torch
 from cannbotdsl.aicpu import (
-    gm_in as GmIn,
-    gm_out as GmOut,
+    GmIn,
+    GmOut,
     I32,
     I64,
     U32,
@@ -41,34 +41,10 @@ GROUP_QUERY_OFFSET_FIELD = 7
 S2_TILE_TOKENS = 256
 
 
-GROUP_CACHE_FIELDS = 6
-
-
-GROUP_CACHE_ID = 0
-
-
-GROUP_CACHE_BATCH = 1
-
-
-GROUP_CACHE_OFFSET = 2
-
-
-GROUP_CACHE_ACTIVE = 3
-
-
-GROUP_CACHE_TILES = 4
-
-
-GROUP_CACHE_COST = 5
-
-
 class Args:
     cu: GmIn(I32)
     used_q: GmIn(I32)
     used_k: GmIn(I32)
-
-    cu_k: GmIn(I32)
-
     residual: GmIn(I32)
     candidate_length: GmIn(I32)
     output_offset: GmIn(I32)
@@ -77,9 +53,6 @@ class Args:
     has_cu: U32
     has_q: U32
     has_k: U32
-
-    has_cu_k: U32
-
     has_residual: U32
     sparse: U32
     mask: U32
@@ -102,69 +75,50 @@ def _group_field(args, g, total_q, field):
         if field == 6:
             return args.batch
         return 0
-    cache = args.batch + 1
-    if args.scratch[cache + GROUP_CACHE_ID] != g:
-        batch_idx = args.scratch[cache + GROUP_CACHE_BATCH]
-        # 连续访问同一 batch 的分组时复用前缀区间，否则才做二分查找。
-        if g < args.scratch[batch_idx] or g >= args.scratch[batch_idx + 1]:
-            lo = 0
-            hi = args.batch
-            while lo + 1 < hi:
-                mid = (lo + hi) // 2
-                if args.scratch[mid] <= g:
-                    lo = mid
-                else:
-                    hi = mid
-            batch_idx = lo
-        qoff = (g - args.scratch[batch_idx]) * args.query_rows
-        begin = 0
-        end = total_q
-        if args.has_cu != 0:
-            begin = args.cu[batch_idx]
-            end = args.cu[batch_idx + 1]
-        used = end - begin
-        if args.has_q != 0:
-            used = args.used_q[batch_idx]
-        span = min(args.query_rows, max(0, end - begin - qoff))
-        active = min(span, max(0, used - qoff))
-        actual = args.capacity
-        if args.has_k != 0:
-            actual = args.used_k[batch_idx]
-        elif args.has_cu_k != 0:
-            actual = args.cu_k[batch_idx + 1] - args.cu_k[batch_idx]
-        rem = 0
-        if args.has_residual != 0:
-            rem = args.residual[batch_idx]
-        visible = actual
-        if args.mask == 3:
-            visible = min(
-                actual,
-                max(
-                    0, (actual * args.ratio + rem - used + qoff + active) // args.ratio
-                ),
-            )
-        if active == 0:
-            visible = 0
-        # 仅缓存查询结果，不改变调度成本模型和 LI/LD 输出。
-        args.scratch[cache + GROUP_CACHE_ID] = g
-        args.scratch[cache + GROUP_CACHE_BATCH] = batch_idx
-        args.scratch[cache + GROUP_CACHE_OFFSET] = qoff
-        args.scratch[cache + GROUP_CACHE_ACTIVE] = active
-        args.scratch[cache + GROUP_CACHE_TILES] = (
-            visible + S2_TILE_TOKENS - 1
-        ) // S2_TILE_TOKENS
-        args.scratch[cache + GROUP_CACHE_COST] = (
-            6 * ((active * args.heads + 15) // 16) + 20
-        )
+    # Prefix boundaries map a compact query tile index to its batch.
+    lo = 0
+    hi = args.batch
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        if args.scratch[mid] <= g:
+            lo = mid
+        else:
+            hi = mid
+    batch_idx = lo
+    qoff = (g - args.scratch[batch_idx]) * args.query_rows
+    begin = 0
+    end = total_q
+    if args.has_cu != 0:
+        begin = args.cu[batch_idx]
+        end = args.cu[batch_idx + 1]
+    used = end - begin
+    if args.has_q != 0:
+        used = args.used_q[batch_idx]
+    span = min(args.query_rows, max(0, end - begin - qoff))
+    active = min(span, max(0, used - qoff))
     if field == 6:
-        return args.scratch[cache + GROUP_CACHE_BATCH]
+        return batch_idx
     if field == GROUP_QUERY_OFFSET_FIELD:
-        return args.scratch[cache + GROUP_CACHE_OFFSET]
+        return qoff
     if field == 2:
-        return args.scratch[cache + GROUP_CACHE_ACTIVE]
+        return active
     if field == 9:
-        return args.scratch[cache + GROUP_CACHE_COST]
-    return args.scratch[cache + GROUP_CACHE_TILES]
+        return 6 * ((active * args.heads + 15) // 16) + 20
+    actual = args.capacity
+    if args.has_k != 0:
+        actual = args.used_k[batch_idx]
+    rem = 0
+    if args.has_residual != 0:
+        rem = args.residual[batch_idx]
+    visible = actual
+    if args.mask == 3:
+        visible = min(
+            actual,
+            max(0, (actual * args.ratio + rem - used + qoff + active) // args.ratio),
+        )
+    if active == 0:
+        visible = 0
+    return (visible + S2_TILE_TOKENS - 1) // S2_TILE_TOKENS
 
 
 @aicpu_kernel
@@ -175,7 +129,7 @@ def metadata_kernel(args: Args):
     elif total_q < 0 and args.has_q != 0:
         total_q = args.used_q[0]
     # ASC GetS1SeqSize: seqused_q takes precedence over the TND span.
-    # B+1 prefix entries plus six cached fields; workspace is independent of Q/K length.
+    # Only B+1 prefix entries are needed; workspace never depends on GM values.
     groups = 0
     args.scratch[0] = 0
     for batch_idx in range(args.batch):
@@ -186,8 +140,6 @@ def metadata_kernel(args: Args):
             length = args.used_q[batch_idx]
         groups += (length + args.query_rows - 1) // args.query_rows
         args.scratch[batch_idx + 1] = groups
-    args.scratch[args.batch + 1 + GROUP_CACHE_ID] = -1
-    args.scratch[args.batch + 1 + GROUP_CACHE_BATCH] = 0
     workers = args.workers
     for i in range(METADATA_ELEMENTS):
         args.output[i] = 0
@@ -197,10 +149,10 @@ def metadata_kernel(args: Args):
         total_cost += n * _group_field(args, g, total_q, 9)
     # ASC AssignByBatch -> AssignByRow -> AssignByBlock -> ForceAssign.
     # The cursor is a lexicographic (B, M, S2) boundary. No per-query split cap.
-    first_group = zeros(I64, workers)
-    last_group = zeros(I64, workers)
-    first_tile = zeros(I64, workers)
-    last_tile = zeros(I64, workers)
+    first_group = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    last_group = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    first_tile = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    last_tile = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
     max_row_cost = 0
     for g in range(groups):
         n = _group_field(args, g, total_q, 8)
@@ -266,13 +218,15 @@ def metadata_kernel(args: Args):
         # Assign S2 blocks only when LD is enabled.
         if args.ld != 0 and g < groups:
             n = _group_field(args, g, total_q, 8)
-            # Every tile in this group has the same CV cost. This is exactly
-            # the former loop's stopping condition, computed without iteration.
-            cost = _group_field(args, g, total_q, 9)
-            take = min(n - at, max(0, (limit + cost // 2 - used) // cost))
-            used += take * cost
-            blocks += take
-            at += take
+            while at < n:
+                cost = _group_field(args, g, total_q, 9)
+                if at == n - 1:
+                    cost = _group_field(args, g, total_q, 9)
+                if used + cost > limit + cost // 2:
+                    break
+                used += cost
+                blocks += 1
+                at += 1
             if blocks == 0 and at < n:
                 cost = _group_field(args, g, total_q, 9)
                 if at == n - 1:
@@ -289,106 +243,6 @@ def metadata_kernel(args: Args):
         last_group[c] = g
         last_tile[c] = at
         used_cores = c + 1
-    # Cost-aware contiguous LD partitioning. A fragment pays a fixed local
-    # selection cost in addition to CV tile work. Six tile-equivalents is an
-    # empirical cost-model coefficient, not a shape/core-specific quota.
-    # Preserve the original scheduler when it did not split any query group.
-    split_groups = 0
-    for c in range(used_cores):
-        if first_tile[c] != 0 or last_tile[c] != 0:
-            split_groups = 1
-    if args.sparse == 0 and args.ld != 0 and split_groups != 0:
-        # Bound metadata scratch by the number of workers, not input size.
-        cached_tiles = zeros(I64, workers)
-        cached_weight = zeros(I64, workers)
-        for group_index in range(min(groups, workers)):
-            cached_tiles[group_index] = _group_field(args, group_index, total_q, 8)
-            cached_weight[group_index] = _group_field(args, group_index, total_q, 9)
-        upper = total_cost
-        lower = max(1, (total_cost + workers - 1) // workers)
-        for group_index in range(groups):
-            if (
-                cached_tiles[group_index]
-                if group_index < workers
-                else _group_field(args, group_index, total_q, 8)
-            ) > 0:
-                weight = (
-                    cached_weight[group_index]
-                    if group_index < workers
-                    else _group_field(args, group_index, total_q, 9)
-                )
-                upper += 6 * weight
-                lower = max(lower, 7 * weight)
-        # Greedy packing is a feasibility test for the proposed maximum cost.
-        # Binary search the smallest feasible integer cost; no shape table.
-        while lower < upper:
-            limit = (lower + upper) // 2
-            g = 0
-            at = 0
-            for c in range(workers):
-                left = limit
-                while g < groups:
-                    n = (
-                        cached_tiles[g]
-                        if g < workers
-                        else _group_field(args, g, total_q, 8)
-                    )
-                    if n <= at:
-                        g += 1
-                        at = 0
-                    else:
-                        weight = (
-                            cached_weight[g]
-                            if g < workers
-                            else _group_field(args, g, total_q, 9)
-                        )
-                        take = min(n - at, max(0, left // weight - 6))
-                        if take == 0:
-                            break
-                        left -= (take + 6) * weight
-                        at += take
-                        if at == n:
-                            g += 1
-                            at = 0
-            if g >= groups:
-                upper = limit
-            else:
-                lower = limit + 1
-        g = 0
-        at = 0
-        used_cores = 0
-        for c in range(workers):
-            if g >= groups:
-                break
-            first_group[c] = g
-            first_tile[c] = at
-            left = upper
-            while g < groups:
-                n = (
-                    cached_tiles[g]
-                    if g < workers
-                    else _group_field(args, g, total_q, 8)
-                )
-                if n <= at:
-                    g += 1
-                    at = 0
-                else:
-                    weight = (
-                        cached_weight[g]
-                        if g < workers
-                        else _group_field(args, g, total_q, 9)
-                    )
-                    take = min(n - at, max(0, left // weight - 6))
-                    if take == 0:
-                        break
-                    left -= (take + 6) * weight
-                    at += take
-                    if at == n:
-                        g += 1
-                        at = 0
-            last_group[c] = g
-            last_tile[c] = at
-            used_cores = c + 1
     if used_cores == 0:
         used_cores = 1
         first_group[0] = 0
@@ -414,10 +268,10 @@ def metadata_kernel(args: Args):
         else:
             args.output[c * 8 + 4] = args.batch
     # Record only cross-core rows. Compact workspace slots follow ASC FD order.
-    fd_group = zeros(I64, workers)
-    fd_parts = zeros(I64, workers)
-    fd_base = zeros(I64, workers)
-    fd_rows = zeros(I64, workers)
+    fd_group = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    fd_parts = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    fd_base = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
+    fd_rows = zeros(I64, workers)  # noqa: F821 - AICPU compiler intrinsic.
     fd_num = 0
     workspace = 0
     total_fd_load = 0
@@ -536,24 +390,16 @@ def build_metadata(
     query_rows=6,
     ld=True,
     output_idx_offset=None,
-    cu_k=None,
 ):
     groups = q.shape[0] if sparse else batch * max_tasks
-    workers = int(torch.npu.get_device_properties(q.device).cube_core_num)
-    if not 1 <= workers <= LD_RECORD_START:
-        raise RuntimeError(
-            f"Unsupported Cube core count {workers}; LI metadata supports 1..{LD_RECORD_START}"
-        )
+    workers = 32
     output = torch.empty((METADATA_ELEMENTS,), dtype=torch.int32, device=q.device)
-    scratch = torch.empty(
-        (batch + 1 + GROUP_CACHE_FIELDS,), dtype=torch.int64, device=q.device
-    )
+    scratch = torch.empty((batch + 1,), dtype=torch.int64, device=q.device)
     _, compiled = compiled_metadata()
     tensors = dict(
         cu=cu,
         used_q=used_q,
         used_k=used_k,
-        cu_k=cu_k,
         residual=residual,
         candidate_length=candidate_length,
         output_offset=output_idx_offset,
@@ -566,7 +412,6 @@ def build_metadata(
         has_cu=int(cu is not None),
         has_q=int(used_q is not None),
         has_k=int(used_k is not None),
-        has_cu_k=int(cu_k is not None),
         has_residual=int(mask == 3 and ratio != 1 and residual is not None),
         sparse=int(sparse),
         mask=mask,
@@ -630,11 +475,7 @@ def metadata_geometry(
     if device.type != "npu":
         raise ValueError("Metadata sequence inputs must be on NPU")
     if any(
-        x.dtype != torch.int32
-        or x.ndim != 1
-        or x.device != device
-        or not x.is_contiguous()
-        for x in tensors
+        x.dtype != torch.int32 or x.ndim != 1 or x.device != device for x in tensors
     ):
         raise ValueError(
             "Sequence inputs must be one-dimensional int32 tensors on one device"
@@ -821,16 +662,24 @@ def _tnd_metadata(
         raise ValueError("Cmp_residual_k is required only for causal compressed K")
     if cu_k is None and batch != 1:
         raise ValueError("Multiple TND batches require cu_seqlens_k")
-    if used_k is None and cu_k is None and max_seqlen_k < 0:
-        raise ValueError("K boundaries, used lengths or max_seqlen_k are required")
+    effective_k = used_k
+    if effective_k is None:
+        if cu_k is not None:
+            effective_k = cu_k[1:] - cu_k[:-1]
+        elif max_seqlen_k >= 0:
+            effective_k = torch.full(
+                (batch,), max_seqlen_k, dtype=torch.int32, device=device
+            )
+        else:
+            raise ValueError("K boundaries, used lengths or max_seqlen_k are required")
     query, batch, max_query, capacity = metadata_geometry(
         cu_q,
         used_q,
-        used_k,
+        effective_k,
         residual,
         batch_size=None,
         max_seqlen_q=max_seqlen_q,
-        max_seqlen_k=max(0, max_seqlen_k),
+        max_seqlen_k=0,
         num_heads_q=num_heads_q,
         num_heads_k=num_heads_k,
         head_dim=head_dim,
@@ -845,7 +694,7 @@ def _tnd_metadata(
         query,
         cu_q,
         used_q,
-        used_k,
+        effective_k,
         residual,
         None,
         batch=batch,
@@ -855,5 +704,4 @@ def _tnd_metadata(
         mask=mask_mode,
         ratio=cmp_ratio,
         query_rows=6,
-        cu_k=cu_k,
     )

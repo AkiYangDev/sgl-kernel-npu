@@ -94,7 +94,7 @@ def test_source_wheel_contains_dsl_sources_and_optional_dependency(
     exact = [r for r in requirements if r.name == "cannbot-dsl" and r.marker is None]
     assert not exact
     extra = [r for r in requirements if r.name == "cannbot-dsl"]
-    assert len(extra) == 1 and str(extra[0].specifier) == ">=0.8.0"
+    assert len(extra) == 1 and str(extra[0].specifier) == "<0.8,>=0.7.1"
     assert extra[0].marker.evaluate({"extra": "cannbot_dsl"})
     assert not extra[0].marker.evaluate({"extra": ""})
     version_parser = [r for r in requirements if r.name == "packaging"]

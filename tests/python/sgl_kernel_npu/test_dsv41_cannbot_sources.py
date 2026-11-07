@@ -15,7 +15,7 @@ UPSTREAM = json.loads((IMPL.parent / "UPSTREAM.json").read_text(encoding="utf-8"
 
 
 @pytest.mark.parametrize("entry", UPSTREAM["files"], ids=lambda entry: entry["file"])
-def test_vendored_source_matches_pinned_upstream(entry):
+def test_vendored_source_matches_packaged_manifest(entry):
     source = IMPL / entry["file"]
     assert source.is_file(), source
     data = source.read_bytes()

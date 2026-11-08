@@ -7,7 +7,8 @@ torch = pytest.importorskip("torch")
 
 @pytest.mark.npu
 @pytest.mark.parametrize("kind", ["mqsmla", "qli", "qsli"])
-def test_metadata_replay_reads_updated_lengths(kind):
+@pytest.mark.parametrize("caller_output", [False, True])
+def test_metadata_replay_reads_updated_lengths(kind, caller_output):
     from sgl_kernel_npu.operators.attention import mixed_quant_sparse_flash_mla_metadata
     from sgl_kernel_npu.operators.indexer import (
         quant_lightning_indexer_metadata,
@@ -20,9 +21,14 @@ def test_metadata_replay_reads_updated_lengths(kind):
     candidates = torch.tensor([[4], [8]], dtype=torch.int32, device=device)
     window = torch.tensor([[64], [128]], dtype=torch.int32, device=device)
 
-    def invoke():
+    output = (
+        torch.empty(1024, dtype=torch.int32, device=device) if caller_output else None
+    )
+
+    def invoke(out=None):
         if kind == "mqsmla":
             return mixed_quant_sparse_flash_mla_metadata(
+                out=out,
                 ori_topk_length=window,
                 cmp_topk_length=lengths.view(2, 1),
                 cu_seqlens_q=cu_q,
@@ -36,6 +42,7 @@ def test_metadata_replay_reads_updated_lengths(kind):
                 has_cmp_kv=True,
             )
         common = dict(
+            out=out,
             cu_seqlens_q=cu_q,
             seqused_k=lengths,
             batch_size=2,
@@ -64,12 +71,14 @@ def test_metadata_replay_reads_updated_lengths(kind):
     torch.npu.synchronize()
     graph = torch.npu.NPUGraph()
     with torch.npu.graph(graph):
-        captured = invoke()
+        captured = invoke(output)
+    if caller_output:
+        assert captured is output
     pointer = captured.data_ptr()
     changed = False
     # Cross a scheduling boundary; short lengths alone can share one metadata
     # plan and would let a stale captured result appear correct.
-    for value in (64, 4096, 192):
+    for value in (64, 4096, 0, 192, 64):
         lengths.fill_(value)
         candidates.fill_(value // 8)
         window.fill_(min(value, 128))

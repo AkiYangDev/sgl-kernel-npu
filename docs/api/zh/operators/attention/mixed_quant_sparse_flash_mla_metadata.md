@@ -14,7 +14,7 @@ from typing import Optional
 
 from sgl_kernel_npu.operators.attention import mixed_quant_sparse_flash_mla_metadata
 
-mixed_quant_sparse_flash_mla_metadata(ori_topk_length, cmp_topk_length, *, cu_seqlens_q=None, seqused_q=None, seqused_ori_kv=None, seqused_cmp_kv=None, batch_size=None, max_seqlen_q=None, max_seqlen_ori_kv=None, max_seqlen_cmp_kv=None, num_heads_q, num_heads_kv, head_dim, quant_mode, layout_q='TND', layout_kv='PA_BBND', has_ori_kv=True, has_cmp_kv=True, impl='auto')
+mixed_quant_sparse_flash_mla_metadata(ori_topk_length, cmp_topk_length, *, cu_seqlens_q=None, seqused_q=None, seqused_ori_kv=None, seqused_cmp_kv=None, batch_size=None, max_seqlen_q=None, max_seqlen_ori_kv=None, max_seqlen_cmp_kv=None, num_heads_q, num_heads_kv, head_dim, quant_mode, layout_q='TND', layout_kv='PA_BBND', has_ori_kv=True, has_cmp_kv=True, out=None, impl='auto')
 ```
 
 ## 输入约束
@@ -30,3 +30,5 @@ mixed_quant_sparse_flash_mla_metadata(ori_topk_length, cmp_topk_length, *, cu_se
 ```bash
 python -m pytest tests/python/sgl_kernel_npu/dsv41_cannbot_dsl/test_mixed_quant_sparse_flash_mla_metadata.py --npu-device 0 -q
 ```
+
+可选关键字 `out` 接收输入设备上的连续 INT32 `[1024]` 缓冲区，不能与调度输入重叠。算子在当前流中写入并返回同一个张量；省略 `out` 时仍分配新结果。

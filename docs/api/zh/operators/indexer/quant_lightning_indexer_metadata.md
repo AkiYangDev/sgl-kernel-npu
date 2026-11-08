@@ -14,7 +14,7 @@ from typing import Optional
 
 from sgl_kernel_npu.operators.indexer import quant_lightning_indexer_metadata
 
-quant_lightning_indexer_metadata(cu_seqlens_q=None, cu_seqlens_k=None, seqused_q=None, seqused_k=None, cmp_residual_k=None, *, batch_size=None, max_seqlen_q=-1, max_seqlen_k=-1, num_heads_q, num_heads_k, head_dim, topk, mask_mode=0, cmp_ratio=1, layout_q='TND', layout_k='TND', candidate_topk_blocks=-1, candidate_block_size=-1, impl='auto')
+quant_lightning_indexer_metadata(cu_seqlens_q=None, cu_seqlens_k=None, seqused_q=None, seqused_k=None, cmp_residual_k=None, *, batch_size=None, max_seqlen_q=-1, max_seqlen_k=-1, num_heads_q, num_heads_k, head_dim, topk, mask_mode=0, cmp_ratio=1, layout_q='TND', layout_k='TND', candidate_topk_blocks=-1, candidate_block_size=-1, out=None, impl='auto')
 ```
 
 ## 输入约束
@@ -30,3 +30,5 @@ quant_lightning_indexer_metadata(cu_seqlens_q=None, cu_seqlens_k=None, seqused_q
 ```bash
 python -m pytest tests/python/sgl_kernel_npu/dsv41_cannbot_dsl/test_quant_lightning_indexer_metadata.py --npu-device 0 -q
 ```
+
+可选关键字 `out` 接收输入设备上的连续 INT32 `[1024]` 缓冲区，不能与调度输入重叠。算子在当前流中写入并返回同一个张量；省略 `out` 时仍分配新结果。

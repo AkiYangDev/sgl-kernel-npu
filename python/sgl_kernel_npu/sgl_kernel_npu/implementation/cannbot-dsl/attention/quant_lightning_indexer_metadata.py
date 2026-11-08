@@ -31,6 +31,8 @@ from cannbotdsl.aicpu import (
     current_raw_stream,
 )
 
+from . import _metadata_output
+
 
 # LI/LD 固定输出布局；第 36 行为 LD/FD 归并记录起始位置。
 METADATA_ELEMENTS = 1024
@@ -537,6 +539,7 @@ def build_metadata(
     ld=True,
     output_idx_offset=None,
     cu_k=None,
+    out=None,
 ):
     groups = q.shape[0] if sparse else batch * max_tasks
     workers = int(torch.npu.get_device_properties(q.device).cube_core_num)
@@ -544,7 +547,12 @@ def build_metadata(
         raise RuntimeError(
             f"Unsupported Cube core count {workers}; LI metadata supports 1..{LD_RECORD_START}"
         )
-    output = torch.empty((METADATA_ELEMENTS,), dtype=torch.int32, device=q.device)
+    output = _metadata_output(
+        out,
+        METADATA_ELEMENTS,
+        q.device,
+        (cu, used_q, used_k, residual, candidate_length, output_idx_offset, cu_k),
+    )
     scratch = torch.empty(
         (batch + 1 + GROUP_CACHE_FIELDS,), dtype=torch.int64, device=q.device
     )
@@ -584,6 +592,8 @@ def build_metadata(
         has_offset=int(output_idx_offset is not None),
     )
     stream = torch.npu.current_stream(q.device)
+    if out is not None:
+        output.record_stream(stream)
     scratch.record_stream(stream)
     for v in tensors.values():
         if v is not None:
@@ -689,6 +699,7 @@ def quant_lightning_indexer_metadata(
     layout_k="TND",
     candidate_topk_blocks=-1,
     candidate_block_size=-1,
+    out=None,
 ):
     """Build flat AICPU metadata without requiring Q/K data tensors."""
     if (num_heads_q, num_heads_k, head_dim) != (32, 1, 128):
@@ -717,6 +728,7 @@ def quant_lightning_indexer_metadata(
             layout_q=layout_q,
             candidate_topk_blocks=candidate_topk_blocks,
             candidate_block_size=candidate_block_size,
+            out=out,
         )
     q, batch, max_q, capacity = metadata_geometry(
         cu_seqlens_q,
@@ -751,6 +763,7 @@ def quant_lightning_indexer_metadata(
         mask=mask_mode,
         ratio=cmp_ratio,
         query_rows=rows,
+        out=out,
     )
 
 
@@ -773,6 +786,7 @@ def _tnd_metadata(
     layout_q,
     candidate_topk_blocks,
     candidate_block_size,
+    out=None,
 ):
     if (num_heads_q, num_heads_k, head_dim) != (32, 1, 128):
         raise ValueError("TND QLI requires Nq=32, Nk=1 and logical D=128")
@@ -856,4 +870,5 @@ def _tnd_metadata(
         ratio=cmp_ratio,
         query_rows=6,
         cu_k=cu_k,
+        out=out,
     )

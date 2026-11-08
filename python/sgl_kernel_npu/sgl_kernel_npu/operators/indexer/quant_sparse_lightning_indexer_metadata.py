@@ -45,6 +45,7 @@ def quant_sparse_lightning_indexer_metadata(
     cmp_ratio=1,
     layout_q="TND",
     layout_k="TND",
+    out=None,
     impl="auto",
 ):
     """Build sparse-indexer scheduling metadata from candidate block lengths.
@@ -71,4 +72,5 @@ def quant_sparse_lightning_indexer_metadata(
         cmp_ratio=cmp_ratio,
         layout_q=layout_q,
         layout_k=layout_k,
+        out=out,
     )

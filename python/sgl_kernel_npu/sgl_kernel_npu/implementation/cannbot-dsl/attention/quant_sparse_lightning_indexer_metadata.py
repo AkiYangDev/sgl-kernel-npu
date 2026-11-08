@@ -29,6 +29,8 @@ from cannbotdsl.aicpu import (
     current_raw_stream,
 )
 
+from . import _metadata_output
+
 
 # metadata 为 int32[1024]；每条分核记录包含 8 个字段。
 METADATA_ELEMENTS = 1024
@@ -410,6 +412,7 @@ def build_metadata(
     query_rows=6,
     ld=True,
     output_idx_offset=None,
+    out=None,
 ):
     groups = q.shape[0] if sparse else batch * max_tasks
     workers = int(torch.npu.get_device_properties(q.device).cube_core_num)
@@ -417,7 +420,12 @@ def build_metadata(
         raise RuntimeError(
             f"Unsupported Cube core count {workers}; LI metadata supports 1..{LD_RECORD_START}"
         )
-    output = torch.empty((METADATA_ELEMENTS,), dtype=torch.int32, device=q.device)
+    output = _metadata_output(
+        out,
+        METADATA_ELEMENTS,
+        q.device,
+        (cu, used_q, used_k, residual, candidate_length, output_idx_offset),
+    )
     scratch = torch.empty(
         (groups * (12 + 3 * splits),), dtype=torch.int64, device=q.device
     )
@@ -455,6 +463,8 @@ def build_metadata(
         has_offset=int(output_idx_offset is not None),
     )
     stream = torch.npu.current_stream(q.device)
+    if out is not None:
+        output.record_stream(stream)
     scratch.record_stream(stream)
     for v in tensors.values():
         if v is not None:
@@ -554,6 +564,7 @@ def quant_sparse_lightning_indexer_metadata(
     cmp_ratio=1,
     layout_q="TND",
     layout_k="TND",
+    out=None,
 ):
     if layout_k == "TND":
         if batch_size is not None:
@@ -593,6 +604,7 @@ def quant_sparse_lightning_indexer_metadata(
             topk=topk,
             mask_mode=mask_mode,
             cmp_ratio=cmp_ratio,
+            out=out,
         )
 
     if quant_mode != 1 or candidate_block_size != 8:
@@ -640,6 +652,7 @@ def quant_sparse_lightning_indexer_metadata(
         mask=mask_mode,
         ratio=cmp_ratio,
         sparse=True,
+        out=out,
     )
 
 
@@ -698,6 +711,7 @@ def _build_tnd_metadata(
     mask_mode,
     cmp_ratio,
     output_idx_offset=None,
+    out=None,
 ):
     from types import SimpleNamespace
 
@@ -717,4 +731,5 @@ def _build_tnd_metadata(
         ratio=int(cmp_ratio),
         sparse=True,
         output_idx_offset=output_idx_offset,
+        out=out,
     )

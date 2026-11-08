@@ -14,7 +14,7 @@ from typing import Optional
 
 from sgl_kernel_npu.operators.attention import mixed_quant_sparse_flash_mla_metadata
 
-mixed_quant_sparse_flash_mla_metadata(ori_topk_length, cmp_topk_length, *, cu_seqlens_q=None, seqused_q=None, seqused_ori_kv=None, seqused_cmp_kv=None, batch_size=None, max_seqlen_q=None, max_seqlen_ori_kv=None, max_seqlen_cmp_kv=None, num_heads_q, num_heads_kv, head_dim, quant_mode, layout_q='TND', layout_kv='PA_BBND', has_ori_kv=True, has_cmp_kv=True, impl='auto')
+mixed_quant_sparse_flash_mla_metadata(ori_topk_length, cmp_topk_length, *, cu_seqlens_q=None, seqused_q=None, seqused_ori_kv=None, seqused_cmp_kv=None, batch_size=None, max_seqlen_q=None, max_seqlen_ori_kv=None, max_seqlen_cmp_kv=None, num_heads_q, num_heads_kv, head_dim, quant_mode, layout_q='TND', layout_kv='PA_BBND', has_ori_kv=True, has_cmp_kv=True, out=None, impl='auto')
 ```
 
 ## Inputs
@@ -30,3 +30,5 @@ Returns INT32 `[1024]` metadata. Produce it on the same NPU stream before callin
 ```bash
 python -m pytest tests/python/sgl_kernel_npu/dsv41_cannbot_dsl/test_mixed_quant_sparse_flash_mla_metadata.py --npu-device 0 -q
 ```
+
+Optional keyword `out` supplies a contiguous INT32 `[1024]` buffer on the input device. It must not overlap any scheduling input. The operator writes and returns this same tensor on the current stream; omit `out` to allocate a new result.

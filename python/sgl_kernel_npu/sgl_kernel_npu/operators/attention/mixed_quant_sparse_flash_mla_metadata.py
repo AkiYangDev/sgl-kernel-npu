@@ -44,6 +44,7 @@ def mixed_quant_sparse_flash_mla_metadata(
     layout_kv="PA_BBND",
     has_ori_kv=True,
     has_cmp_kv=True,
+    out=None,
     impl="auto",
 ):
     """Build scheduling metadata for ``mixed_quant_sparse_flash_mla``.
@@ -69,4 +70,5 @@ def mixed_quant_sparse_flash_mla_metadata(
         layout_kv=layout_kv,
         has_ori_kv=has_ori_kv,
         has_cmp_kv=has_cmp_kv,
+        out=out,
     )

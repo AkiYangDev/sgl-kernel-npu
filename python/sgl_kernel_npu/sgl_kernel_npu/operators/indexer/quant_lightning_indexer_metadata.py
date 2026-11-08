@@ -44,6 +44,7 @@ def quant_lightning_indexer_metadata(
     layout_k="TND",
     candidate_topk_blocks=-1,
     candidate_block_size=-1,
+    out=None,
     impl="auto",
 ):
     """Build scheduling metadata for ``quant_lightning_indexer``.
@@ -69,4 +70,5 @@ def quant_lightning_indexer_metadata(
         layout_k=layout_k,
         candidate_topk_blocks=candidate_topk_blocks,
         candidate_block_size=candidate_block_size,
+        out=out,
     )

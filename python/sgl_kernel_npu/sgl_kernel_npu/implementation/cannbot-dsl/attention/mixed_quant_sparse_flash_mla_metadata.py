@@ -11,6 +11,8 @@ import threading
 
 from cannbotdsl.aicpu import gm_in, gm_out, I32, I64, aicpu_kernel, current_raw_stream
 
+from . import _metadata_output
+
 AIC_CORE_MAX_NUM = 36
 AIV_CORE_MAX_NUM = 72
 MQSMLA_METADATA_TOTAL_SIZE = 1024
@@ -545,6 +547,7 @@ def mixed_quant_sparse_flash_mla_metadata(
     layout_kv="PA_BBND",
     has_ori_kv=True,
     has_cmp_kv=True,
+    out=None,
 ):
     """Generate batch-relative FA/FD metadata on AICPU.
 
@@ -616,8 +619,11 @@ def mixed_quant_sparse_flash_mla_metadata(
     batch = cu_q.numel() - 1
     compiled = _get_compiled_metadata()
     with torch.npu.device(device):
-        metadata = torch.empty(
-            MQSMLA_METADATA_TOTAL_SIZE, dtype=torch.int32, device=device
+        metadata = _metadata_output(
+            out,
+            MQSMLA_METADATA_TOTAL_SIZE,
+            device,
+            (cu_q, ori_topk_length, cmp_topk_length),
         )
         compiled.launch(
             current_raw_stream(device.index),
@@ -635,4 +641,6 @@ def mixed_quant_sparse_flash_mla_metadata(
                 else int(SUPPORT_FD)
             ),
         )
+    if out is not None:
+        metadata.record_stream(torch.npu.current_stream(device))
     return metadata

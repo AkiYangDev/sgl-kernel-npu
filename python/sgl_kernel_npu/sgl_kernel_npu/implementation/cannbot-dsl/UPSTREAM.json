@@ -21,7 +21,8 @@
     {
       "path": "samples/attention/mixed_quant_sparse_flash_mla/mixed_quant_sparse_flash_mla_metadata.py",
       "file": "mixed_quant_sparse_flash_mla_metadata.py",
-      "sha256": "51e13bd02d35704f99298dd9fdff36ddd82c941a8106c07d8e668d29664ad40a"
+      "sha256": "77e37b9ec30fce8a96ebe073cc9f7a6d2a429ca952800df980f66fb20af57767",
+      "upstream_sha256": "51e13bd02d35704f99298dd9fdff36ddd82c941a8106c07d8e668d29664ad40a"
     },
     {
       "path": "samples/attention/quant_lightning_indexer/quant_lightning_indexer.py",
@@ -31,7 +32,8 @@
     {
       "path": "samples/attention/quant_lightning_indexer_metadata/quant_lightning_indexer_metadata.py",
       "file": "quant_lightning_indexer_metadata.py",
-      "sha256": "d78f6062c2c8897161cf946706f46a7a519db19047d4c53a9e8b05b62a9b0ed0"
+      "sha256": "19e9a45ebaab0bbc34e6a2a8d227305caa03597278ab7f3500f687c160854adb",
+      "upstream_sha256": "d78f6062c2c8897161cf946706f46a7a519db19047d4c53a9e8b05b62a9b0ed0"
     },
     {
       "path": "samples/attention/quant_sparse_lightning_indexer/quant_sparse_lightning_indexer.py",
@@ -41,7 +43,8 @@
     {
       "path": "samples/attention/quant_sparse_lightning_indexer_metadata/quant_sparse_lightning_indexer_metadata.py",
       "file": "quant_sparse_lightning_indexer_metadata.py",
-      "sha256": "c75be92de66a0307500bb5da12f622ad35df87f2dd9bee15a09bbc4d3a19a0a4"
+      "sha256": "9f2ecb4b858a111ec7c1d956cc20154ef878f27fc984ce05b18acfd00863b8a8",
+      "upstream_sha256": "c75be92de66a0307500bb5da12f622ad35df87f2dd9bee15a09bbc4d3a19a0a4"
     }
   ],
   "patches": [
@@ -49,6 +52,18 @@
       "file": "indexer_prologue_k.py",
       "upstream_commit": "31bbd706a4e6a72b278da4b70718e60286ccb9e7",
       "description": "Pad projection backing to BASE_M rows while preserving logical T."
+    },
+    {
+      "file": "mixed_quant_sparse_flash_mla_metadata.py",
+      "description": "Accept optional caller-owned metadata output; preserve the AICPU scheduling algorithm and launch ABI."
+    },
+    {
+      "file": "quant_lightning_indexer_metadata.py",
+      "description": "Accept optional caller-owned metadata output; preserve the AICPU scheduling algorithm and launch ABI."
+    },
+    {
+      "file": "quant_sparse_lightning_indexer_metadata.py",
+      "description": "Accept optional caller-owned metadata output; preserve the AICPU scheduling algorithm and launch ABI."
     }
   ]
 }
